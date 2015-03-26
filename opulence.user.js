@@ -90,7 +90,6 @@ var root = angular.element(document.body).injector().get('$rootScope'),
     originalSave = gameModule.save,
     originalLoad = gameModule.init,
     initialized = false,
-    oldUsers = [],
     chatHistory = {
         index: 0, add: function (message) {
             if (!message) return;
@@ -231,7 +230,10 @@ chatModule.connect = function () {
                 addMessage(msg.message, "#E7E719");
             }
         });
-        // Mark initial connected friends - TODO
+        // Mark initial connected friends
+        this.socket.once('listOfUsers', function (msg) {
+            
+        });
     }
     return ret;
 };
