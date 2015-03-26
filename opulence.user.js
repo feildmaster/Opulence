@@ -82,7 +82,14 @@ var root = angular.element(document.body).injector().get('$rootScope'),
         return Object.keys(friends).length;
     },
     delFriend = function (name) {
-        delete friends[name];
+        name = name.toLowerCase();
+        Object.keys(friends).some(function (friend) {
+            if (friend.toLowerCase() === name) {
+                delete friends[friend];
+                return true;
+            }
+            return false;
+        });
         return Object.keys(friends).length;
     },
     originalConnect = chatModule.connect,
