@@ -52,9 +52,9 @@ var root = angular.element(document.body).injector().get('$rootScope'),
     /**
      * Returns proper name if online, false if offline
      */
-    isOnline = function (name) {
+    isOnline = function (name, list) {
         name = name.toLowerCase();
-        var person, online = root.online, length = online.length, i = 0;
+        var person, online = list || root.online, length = online.length, i = 0;
         while (i < length) {
             person = online[i++];
             if (person.toLowerCase() === name) {
@@ -232,7 +232,10 @@ chatModule.connect = function () {
         });
         // Mark initial connected friends
         this.socket.once('listOfUsers', function (msg) {
-            
+            var list = msg.message;
+            Object.keys(friends).forEach(function (name) {
+                friends[name] = isOnline(name, list);
+            });
         });
     }
     return ret;
