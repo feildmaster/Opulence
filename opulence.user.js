@@ -109,15 +109,23 @@ function addMessage(message, sender, time, color) {
         color = sender;
         sender = null;
     }
-    if (sender) {
-        chatModule.addMsg({message: message, nickname: sender, time: time || Date.now()});
+    if (sender && !(time || color)) {
+        chatModule.addMsg({message: message, nickname: sender});
     } else {
-        var li = $("<li></li>");
-        li.html(message);
-        if (time) {
-            li.prop("title", new Date(time).toLocaleDateString());
+        var li = $("<li></li>"), date = time ? new Date(time) : new Date();
+        if (sender) {
+            if (sender === 'system') {
+                li.addClass('text-danger');
+            }
+            // The style bit is only there until the CSS is fixed
+            sender = "<span class='sender" + (sender === root.User.username ? " selfText' style='color: #629bfa;" : "") + "'>" + sender + ": </span>";
+        } else {
+            // Only set color if we have no sender - those messages get special treatment
+            li.css("color", color || "#00ff00");
+            sender = "";
         }
-        li.css("color", color || "#00ff00");
+        li.html(sender + message);
+        li.prop("title", date.toLocaleString());
         $("#chatlog").append(li);
     }
     root.newMsg = true;
