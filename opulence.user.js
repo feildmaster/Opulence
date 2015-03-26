@@ -3,7 +3,7 @@
 // @author      feildmaster
 // @description Modifications and Additions to the browser game Prosperity
 // @namespace   https://feildmaster.com/
-// @version     0.1
+// @version     0.2pre
 // @include       http://www.prosperity.ga/
 // @source      https://github.com/feildmaster/Opulence
 // @copyright   2015+, feildmaster
@@ -41,10 +41,44 @@ var root = angular.element(document.body).injector().get('$rootScope'),
     chatModule = angular.element(document).injector().get("Chat"),
     gameModule = angular.element(document).injector().get("Game"),
     friends = {
-        /*name: true || false*/
+        /*name: actual name || false*/
+    },
+    isFriend = function (name) {
+        name = name.toLowerCase();
+        return Object.keys(friends).some(function (friend) {
+            return friend.toLowerCase() === name;
+        });
+    },
+    /**
+     * Returns proper name if online, false if offline
+     */
+    isOnline = function (name) {
+        name = name.toLowerCase();
+        var person, online = root.online, length = online.length, i = 0;
+        while (i < length) {
+            person = online[i++];
+            if (person.toLowerCase() === name) {
+                return person;
+            }
+        }
+        return false;
+    },
+    markFriend = function (name, value) {
+        name = name.toLowerCase();
+        Object.keys(friends).some(function (friend) {
+            if (friend.toLowerCase() === name) {
+                friends[friend] = value;
+                return true;
+            }
+            return false;
+        });
     },
     addFriend = function (name) {
-        friends[name] = true;
+        var online = isOnline(name);
+        if (online) {
+            name = online;
+        }
+        friends[name] = online;
         return Object.keys(friends).length;
     },
     delFriend = function (name) {
@@ -110,29 +144,27 @@ chatModule.send = function (type, message) {
                 case "friendlist":
                 case "friends":
                 case "=friend":
-                    var friendlist = Object.keys(friends),
-                        friendMsg = "", glue = ", ";
-                    if (friendlist.length) {
-                        for (var i = 0; i < friendlist.length; i++) {
-                            if (i > 0) {
-                                friendMsg += glue;
-                            }
-                            if (root.online.hasOwnProperty(friendlist[i])) {
-                                friendMsg += "*";
-                            }
-                            friendMsg += friendlist[i];
+                    var friendMsg = "", glue = ", ";
+                    Object.each(friends, function (online, friend) {
+                        if (friendMsg) {
+                            friendMsg += glue;
                         }
-                    } else {
-                        friendMsg = "None";
-                    }
-                    return addMessage(String.format("Your friends (*online): {0}", friendMsg));
+                        if (online) {
+                            // online is their fully-qualified name
+                            friendMsg += "*" + online;
+                        } else {
+                            // Otherwise show their stored name
+                            friendMsg += friend;
+                        }
+                    });
+                    return addMessage(String.format("Your friends (*online): {0}", friendMsg || "None"));
                 case "addfriend":
                 case "friend":
                 case "+friend":
                     if (!message) {
                         return addMessage(String.format("Invalid Syntax: /{0} [name of friend to add]", command), "#f00");
                     }
-                    if (!friends.hasOwnProperty(message)) {
+                    if (!isFriend(message)) {
                         addFriend(message);
                         return addMessage(String.format("Added friend: {0}", message));
                     }
@@ -143,7 +175,7 @@ chatModule.send = function (type, message) {
                     if (!message) {
                         return addMessage(String.format("Invalid Syntax: /{0} [name of friend to remove]", command), "#f00");
                     }
-                    if (friends.hasOwnProperty(message)) {
+                    if (isFriend(message)) {
                         delFriend(message);
                         return addMessage(String.format("Removed friend: {0}", message));
                     }
@@ -183,18 +215,18 @@ chatModule.connect = function () {
         });
         this.socket.on('userJoined', function(msg) {
             var name = msg.message.substring(0, msg.message.indexOf(" has")), index;
-            if (friends.hasOwnProperty(name)) {
+            if (isFriend(name)) {
                 // Mark as online
-                friends[name] = true;
+                markFriend(name, name);
                 // Display connection message
                 addMessage(msg.message, "#E7E719");
             }
         });
         this.socket.on('userLeft', function (msg) {
             var name = msg.message.substring(0, msg.message.indexOf(" has")), index;
-            if (friends.hasOwnProperty(name)) {
+            if (isFriend(name)) {
                 // Mark as offline
-                friends[name] = false;
+                markFriend(name, false)
                 // Display disconnect message
                 addMessage(msg.message, "#E7E719");
             }
