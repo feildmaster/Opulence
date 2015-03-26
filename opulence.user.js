@@ -179,7 +179,7 @@ chatModule.send = function (type, message) {
                         delFriend(message);
                         return addMessage(String.format("Removed friend: {0}", message));
                     }
-                    return addMessage(String.format("Already friends with: {0}", message));
+                    return addMessage(String.format("Not friends with: {0}", message));
                 default:
                     return addMessage(String.format("Unknown Command: {0}", command), "#f00");
             }
