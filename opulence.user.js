@@ -10,16 +10,28 @@
 // @grant       none
 // ==/UserScript==
 
-// Pollyfill start
+// Polyfill start
 if (!String.format) {
-  String.format = function(format) {
+  String.format = function (format) {
     var args = Array.prototype.slice.call(arguments, 1);
     return format.replace(/{(\d+)}/g, function(match, number) { 
       return typeof args[number] !== 'undefined' ? args[number] : match;
     });
   };
 }
-// Pollyfill end
+if (!String.contains) {
+    String.contains = function (string, needle) {
+        return string.indexOf(needle) !== -1;
+    };
+}
+if (!Object.each) {
+    Object.each = function (object, callback, thisArg) {
+        Object.keys(object).forEach(function (key) {
+            callback.call(thisArg, this[key], key, this);
+        }, object);
+    };
+}
+// Polyfill end
 
 // TODO: Be more "angular"   
 // ApplicationConfiguration.registerModule('Opulence');
@@ -163,32 +175,38 @@ chatModule.connect = function () {
     }
     // Connect normally
     var ret = originalConnect.apply(this, arguments);
-    // Listen to socket events
+    // Add socket events
     if (this.socket) {
         this.socket.on('chat', function(msg) {
+            // Add chat history
             chatHistory.add(msg);
         });
         this.socket.on('userJoined', function(msg) {
             var name = msg.message.substring(0, msg.message.indexOf(" has")), index;
             if (friends.hasOwnProperty(name)) {
+                // Mark as online
                 friends[name] = true;
+                // Display connection message
                 addMessage(msg.message, "#E7E719");
             }
         });
         this.socket.on('userLeft', function (msg) {
             var name = msg.message.substring(0, msg.message.indexOf(" has")), index;
             if (friends.hasOwnProperty(name)) {
+                // Mark as offline
                 friends[name] = false;
+                // Display disconnect message
                 addMessage(msg.message, "#E7E719");
             }
         });
+        // Mark initial connected friends - TODO
     }
     return ret;
 };
 
 gameModule.init = function () {
     if (!initialized) {
-        // load friendlist
+        // load friend list
         if (localStorage.hasOwnProperty("plus.friends")) {
             JSON.parse(localStorage.getItem("plus.friends")).forEach(function (name) {
                 friends[name] = false;
@@ -201,7 +219,7 @@ gameModule.init = function () {
 gameModule.save = function () {
     // save friendlist
     localStorage.setItem("plus.friends", JSON.stringify(Object.keys(friends)));
-    // save chat history - saving here is wrong, chat happens even while the game is paused
+    // save chat history - TODO: saving here is wrong, chat happens even while the game is paused
     sessionStorage.setItem("plus.chatHistory", JSON.stringify(chatHistory));
     return originalSave.apply(this, arguments);;
 };
